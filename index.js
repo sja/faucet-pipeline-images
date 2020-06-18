@@ -4,6 +4,7 @@ let sharp = require("sharp");
 let SVGO = require("svgo");
 let { stat, readFile } = require("fs").promises;
 let { abort } = require("faucet-pipeline-core/lib/util");
+const exiftool = require("exiftool-vendored").exiftool;
 
 // we can optimize the settings here, but some would require libvips
 // to be compiled with additional stuff
@@ -91,6 +92,14 @@ async function processFile(fileName,
 	if(fingerprint !== undefined) {
 		writeOptions.fingerprint = fingerprint;
 	}
+
+	let tags = await exiftool.read(sourcePath);
+	let meta = {};
+	if(tags) {
+		meta.exif = tags;
+	}
+
+	writeOptions.meta = meta;
 	return assetManager.writeFile(targetPath, output, writeOptions);
 }
 
@@ -134,7 +143,6 @@ async function optimizeBitmap(sourcePath, format,
 	default:
 		abort(`unsupported format ${format}. We support: JPG, PNG, WebP, SVG`);
 	}
-
 	return image.toBuffer();
 }
 
